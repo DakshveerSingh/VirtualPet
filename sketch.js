@@ -41,17 +41,17 @@ function draw() {
 
 function readStock(data){
   foodS = data.val();
-
-  if(x<=0){
-    x=0;
-  }
-  else{
-    x--;
-  }
 }
 
 function writeStock(x){
   database.ref('/').update({
     Food:x
-  })
+  });
+  
+  if(x <= 0){
+    x = 0;
+  }
+  else{
+    x = x - 1;
+  }
 }
