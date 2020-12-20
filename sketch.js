@@ -5,13 +5,19 @@ var foodS,foodStock;
 var feedButton,addButton;
 var fedTime,lastFed;
 var foodObj;
+var bedroom,garden,washroom;
+var gameState,readGS,writeGS;
+var currentTime;
 
 function preload(){
   dogImg = loadImage("images/dogImg.png");
   happyDogImg = loadImage("images/dogImg1.png");
+  bedroom = loadImage("images/Bed Room.png");
+  garden = loadImage("images/Garden.png");
+  washroom = loadImage("images/Wash Room.png");
 }
 
-function setup() {
+function setup(){
   createCanvas(500,500);
 
   database = firebase.database();
@@ -32,18 +38,51 @@ function setup() {
   addButton = createButton("Add Food");
   addButton.position(750,95);
   addButton.mousePressed(addFoods);
-}
 
-function draw(){
-  background(46,139,87);
-
-  foodObj.display();
-
+  readGS = database.ref('GameState');
+  readGS.on("value",function(data){
+    gameState = data.val();
+  });
+  
   fedTime = database.ref('FeedTime');
   fedTime.on("value",function(data){
     lastFed = data.val();
   });
+}
 
+function draw(){
+  currentTime = hour();
+  if(currentTime === lastFed + 1){
+    updateState("playing");
+    background(garden);
+  }
+  else if(currentTime === lastFed + 2){
+    updateState("bathing");
+    background(washroom);
+  }
+  else if(currentTime > lastFed + 2 && currentTime <= lastFed + 4){
+    updateState("sleeping");
+    background(bedroom);
+  }
+  else{
+    if(currentTime > lastFed + 4){
+    updateState("hungry");
+    dog.addImage(dogImg);
+    }
+    dog.visible = true;
+    foodObj.display();
+  }
+
+  if(gameState != "hungry"){
+    dog.visible = false;
+    feedButton.hide();
+    addButton.hide();
+  }
+  else{
+    dog.visible = true;
+    feedButton.show();
+    addButton.show();
+  }
   fill(255,255,254);
   textSize(15);
   if(lastFed >= 12){
@@ -57,10 +96,6 @@ function draw(){
   }
   
   drawSprites();
-  textSize(20);
-  fill("green")
-  stroke(255);
-  text("STOCK: " + foodS,50,50);
 }
 
 function readStock(data){
@@ -93,6 +128,13 @@ function feedDog(){
   foodObj.FoodStock--;
   database.ref('/').update({
     Food: foodObj.FoodStock,
-    FeedTime: hour()
+    FeedTime: hour(),
+    GameState: "fed"
+  })
+}
+
+function updateState(state){
+  database.ref('/').update({
+    GameState: state
   })
 }
